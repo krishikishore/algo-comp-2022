@@ -30,7 +30,7 @@ def distribution_scores(qnum, answer, grid):
     factor = 1 - (0.9 * (counts[answer] / len(grid)))
     return factor
 
-# Determine maximum compatibility for normalization
+# Determine maximum compatibility for normalization of scores
 def max_comp(users):
     maxcomp = 0
     for i in range(len(users)-1):
