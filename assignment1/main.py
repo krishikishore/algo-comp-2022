@@ -14,12 +14,14 @@ class User:
         self.grad_year = grad_year
         self.responses = responses
 
+# Create a grid of responses for easy access
 def response_grid(users):
     responses = []
     for user in users:
         responses.append(user.responses)
     return responses
 
+# Return a factor based on how unique the response match was for a particular question
 def distribution_scores(qnum, answer, grid):
     qanswers = []
     for responses in grid:
@@ -28,6 +30,7 @@ def distribution_scores(qnum, answer, grid):
     factor = 1 - (0.9 * (counts[answer] / len(grid)))
     return factor
 
+# Determine maximum compatibility for normalization
 def max_comp(users):
     maxcomp = 0
     for i in range(len(users)-1):
@@ -43,10 +46,13 @@ def compute_score(user1, user2, responsegrid):
     score = 0
     user1answers = user1.responses
     user2answers = user2.responses
+    # Check for matches in responses and scale by factor accordingly
     for i in range(0, len(user1answers)):
         if user1answers[i] == user2answers[i]:
             score += (1 * distribution_scores(i, user1answers[i], responsegrid))
+    # Internal normalization of score
     score /= len(user1answers)
+    # Gender-preference matching in score computation
     if (user1.gender in user2.preferences) and (user2.gender in user1.preferences):
         score *= 1
     else:
