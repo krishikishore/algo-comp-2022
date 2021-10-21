@@ -2,6 +2,7 @@
 import json
 import sys
 import os
+import collections as c
 
 INPUT_FILE = 'testdata.json' # Constant variables are usually in ALL CAPS
 
@@ -13,11 +14,44 @@ class User:
         self.grad_year = grad_year
         self.responses = responses
 
+def response_grid(users):
+    responses = []
+    for user in users:
+        responses.append(user.responses)
+    return responses
+
+def distribution_scores(qnum, answer, grid):
+    qanswers = []
+    for responses in grid:
+        qanswers.append(responses[qnum])
+    counts = c.Counter(qanswers)
+    factor = 1 - (0.9 * (counts[answer] / len(grid)))
+    return factor
+
+def max_comp(users):
+    maxcomp = 0
+    for i in range(len(users)-1):
+        for j in range(i+1, len(users)):
+            user1 = users[i]
+            user2 = users[j]
+            if (compute_score(user1, user2, responsegrid) > maxcomp):
+                maxcomp = compute_score(user1, user2, responsegrid) 
+    return maxcomp
 
 # Takes in two user objects and outputs a float denoting compatibility
-def compute_score(user1, user2):
-    # YOUR CODE HERE
-    return 0
+def compute_score(user1, user2, responsegrid):
+    score = 0
+    user1answers = user1.responses
+    user2answers = user2.responses
+    for i in range(0, len(user1answers)):
+        if user1answers[i] == user2answers[i]:
+            score += (1 * distribution_scores(i, user1answers[i], responsegrid))
+    score /= len(user1answers)
+    if (user1.gender in user2.preferences) and (user2.gender in user1.preferences):
+        score *= 1
+    else:
+        score *= 0.1
+    return score
 
 
 if __name__ == '__main__':
@@ -35,9 +69,12 @@ if __name__ == '__main__':
                             user_obj['responses'])
             users.append(new_user)
 
+    responsegrid = response_grid(users)
+    highest_comp = max_comp(users)
+
     for i in range(len(users)-1):
         for j in range(i+1, len(users)):
             user1 = users[i]
             user2 = users[j]
-            score = compute_score(user1, user2)
-            print('Compatibility between {} and {}: {}'.format(user1.name, user2.name, score))
+            score = compute_score(user1, user2, responsegrid)
+            print('Compatibility between {} and {}: {}'.format(user1.name, user2.name, score/highest_comp))
