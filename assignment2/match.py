@@ -1,27 +1,102 @@
 import numpy as np
 from typing import List, Tuple
+import random
+
+# Define Person class to make structure simpler
+class Person:
+    def __init__(self, index, gender_id, gender_pref):
+        self.index = index
+        self.gender_id = gender_id
+        self.gender_pref = gender_pref
+    def __repr__(self): 
+        return "Person index:% s gender_id:% s gender_pref:% s\n" % (self.index, self.gender_id, self.gender_pref)
 
 def run_matching(scores: List[List], gender_id: List, gender_pref: List) -> List[Tuple]:
-    """
-    TODO: Implement Gale-Shapley stable matching!
-    :param scores: raw N x N matrix of compatibility scores. Use this to derive a preference rankings.
-    :param gender_id: list of N gender identities (Male, Female, Non-binary) corresponding to each user
-    :param gender_pref: list of N gender preferences (Men, Women, Bisexual) corresponding to each user
-    :return: `matches`, a List of (Proposer, Acceptor) Tuples representing monogamous matches
 
-    Some Guiding Questions/Hints:
-        - This is not the standard Men proposing & Women receiving scheme Gale-Shapley is introduced as
-        - Instead, to account for various gender identity/preference combinations, it would be better to choose a random half of users to act as "Men" (proposers) and the other half as "Women" (receivers)
-            - From there, you can construct your two preferences lists (as seen in the canonical Gale-Shapley algorithm; one for each half of users
-        - Before doing so, it is worth addressing incompatible gender identity/preference combinations (e.g. gay men should not be matched with straight men).
-            - One easy way of doing this is setting the scores of such combinations to be 0
-            - Think carefully of all the various (Proposer-Preference:Receiver-Gender) combinations and whether they make sense as a match
-        - How will you keep track of the Proposers who get "freed" up from matches?
-        - We know that Receivers never become unmatched in the algorithm.
-            - What data structure can you use to take advantage of this fact when forming your matches?
-        - This is by no means an exhaustive list, feel free to reach out to us for more help!
-    """
-    matches = [()]
+    # Initialize variables
+
+    N = len(gender_id)
+    proposers = []
+    receivers = []
+    matches = []
+    
+    # Create list of receivers
+
+    for i in range(int(N/2)):
+        person = Person(i, gender_id[i], gender_pref[i])
+        receivers.append(person)
+    
+    # Create list of proposers
+
+    for i in range(int(N/2), N):
+        person = Person(i, gender_id[i], gender_pref[i])
+        proposers.append(person)
+
+    # Optimize values for gender identities and preferences
+
+    for proposer in proposers:
+        for receiver in receivers:
+            if (proposer.gender_pref == "Men" and receiver.gender_id != "Male") or (receiver.gender_pref == "Men" and proposer.gender_id != "Male") or (proposer.gender_pref == "Women" and receiver.gender_id != "Female") or (receiver.gender_pref == "Women" and proposer.gender_id != "Female"): 
+                scores[receiver.index][proposer.index] = 0
+                scores[proposer.index][receiver.index] = 0                
+
+    # Set up way to track proposers and receivers left to match and matches themselves
+
+    proposerslefttomatch = []
+    for proposer in proposers:
+        proposerslefttomatch.append(proposer.index)
+    
+    receiverslefttomatch = []
+    for receiver in receivers:
+        receiverslefttomatch.append(receiver.index)
+
+    matches = []
+
+    # While there are still people left to propose
+
+    while len(proposerslefttomatch) > 0:
+
+        # Collect and sort preferences of first proposer on list of proposers
+
+        preferences = []
+        for receiver in receivers:
+            preferences.append(scores[proposerslefttomatch[0]][receiver.index])
+        
+        indicesofsort = np.argsort(preferences)
+        
+        # Check if receiver is free
+
+        for receiverindex in indicesofsort:
+            if receiverindex in receiverslefttomatch:
+                matches.append((receiverindex, proposerslefttomatch[0]))
+                receiverslefttomatch.pop(receiverslefttomatch.index(receiverindex))
+                break
+
+            bestindex = -1
+
+            # Update best index based on existing matches
+
+            for k in range(len(matches)):
+                if matches[k][0] == receiverindex:
+                    bestindex = matches[k][1]
+                    break
+            
+            # Use best index to find best score
+
+            bestscore = scores[receiverindex][bestindex]
+
+            # Checking preference over another
+
+            if preferences[receiverindex] > bestscore:
+                matches.append((receiverindex, proposerslefttomatch[0]))
+                receiverslefttomatch.pop(receiverslefttomatch.index(receiverindex))
+                matches.pop(matches.index(receiverindex, bestindex))
+        
+        # Done with the first proposer on list
+
+        proposerslefttomatch.pop(0)
+        print(matches)
+
     return matches
 
 if __name__ == "__main__":
